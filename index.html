@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NUVIO</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        obsidian: '#08080c',
+                        cardDark: 'rgba(18, 18, 26, 0.75)',
+                        cardBorder: 'rgba(255, 255, 255, 0.1)',
+                        mutedText: '#94a3b8',
+                    },
+                    boxShadow: {
+                        'silver-disc': '0 0 25px rgba(255, 255, 255, 0.15)',
+                        'glow': '0 0 15px rgba(255, 255, 255, 0.3)',
+                        'liquid-glow': '0 25px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.35)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #08080c;
+            color: #ffffff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Minimal Glass Panels */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .liquid-glass-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(36px) saturate(200%);
+            -webkit-backdrop-filter: blur(36px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+        }
+
+        .glass-dock {
+            background: rgba(12, 12, 18, 0.65);
+            backdrop-filter: blur(30px) saturate(190%);
+            -webkit-backdrop-filter: blur(30px) saturate(190%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Vinyl Disc Rotation */
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-vinyl {
+            animation: spinSlow 12s linear infinite;
+        }
+        .paused-spin {
+            animation-play-state: paused;
+        }
+
+        /* Active Track Highlight Glow */
+        .active-track-glow {
+            border-color: rgba(236, 72, 153, 0.7) !important;
+            box-shadow: 0 0 25px rgba(236, 72, 153, 0.45), inset 0 0 10px rgba(236, 72, 153, 0.2) !important;
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.12) 0%, rgba(18, 18, 26, 0.85) 100%) !important;
+        }
+
+        select.bg-custom-select {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+        }
+        select.bg-custom-select option {
+            background-color: #12121a;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between relative selection:bg-white/20">
+
+    <!-- MINIMALIST HEADER NAVBAR (Clean NUVIO Logo Only) -->
+    <header class="fixed top-0 left-0 right-0 z-40 glass-panel px-6 py-3.5 flex items-center justify-between border-b border-white/10">
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('player')">
+            <!-- Exact Custom Vector Replica of User Music Wave Logo -->
+            <div class="w-9 h-9 flex items-center justify-center text-white transition-transform hover:scale-105">
+                <svg viewBox="0 0 100 100" class="w-full h-full fill-current">
+                    <!-- Quarter Note Head -->
+                    <circle cx="34" cy="58" r="14" />
+                    <!-- Note Stem -->
+                    <rect x="44" y="22" width="6" height="38" rx="2" />
+                    <!-- Flag curve -->
+                    <path d="M 50 22 C 55 24, 62 30, 60 42 C 55 35, 50 32, 50 32 Z" />
+                    <!-- Dynamic Waveform Curves -->
+                    <path d="M 22 66 C 30 76, 45 78, 56 68 C 60 64, 64 62, 68 66 C 72 70, 78 72, 85 60 C 82 68, 72 78, 60 76 C 42 74, 30 68, 22 66 Z" />
+                    <path d="M 28 74 C 36 82, 48 84, 58 76 C 62 72, 68 72, 74 78 C 66 84, 52 86, 40 82 C 34 80, 30 76, 28 74 Z" />
+                    <!-- Sound Wave Pulse Overlay -->
+                    <path d="M 50 52 Q 54 44 58 52 T 66 52 T 74 52" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none" />
+                </svg>
+            </div>
+            
+            <h1 class="font-extrabold text-xl tracking-[0.2em] text-white">NUVIO</h1>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 pt-20 pb-32 px-4 sm:px-8 max-w-5xl mx-auto w-full z-10">
+
+        <!-- TAB 1: IMPORT MUSIC -->
+        <section id="tab-search" class="space-y-6 max-w-xl mx-auto transition-all duration-300">
+            <div class="text-center space-y-1.5 mb-8 pt-4">
+                <h2 class="text-2xl sm:text-3xl font-bold tracking-tight">Import Local Tracks</h2>
+                <p class="text-xs sm:text-sm text-mutedText">Upload MP3s directly from your iPhone Files, iPad, or Computer.</p>
+            </div>
+
+            <!-- Upload Drop Zone -->
+            <div onclick="document.getElementById('audioFileInput').click()" class="liquid-glass-card rounded-3xl p-8 sm:p-12 border-2 border-dashed border-white/20 hover:border-white/50 transition-all duration-300 text-center cursor-pointer group shadow-2xl flex flex-col items-center justify-center space-y-4">
+                <!-- iPhone MP3 Import Fix 1: Removed accept="audio/*" attribute to prevent greyed out files in iOS Files picker -->
+                <input type="file" id="audioFileInput" multiple class="hidden" onchange="handleAudioUpload(event)">
+                <div class="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-white/20 transition-all duration-300 shadow-glow">
+                    <i data-lucide="upload-cloud" class="w-8 h-8 text-white"></i>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-base font-semibold text-white">Tap to browse & import audio files</p>
+                    <p class="text-xs text-mutedText">Supports MP3, WAV, AAC, M4A, FLAC</p>
+                </div>
+            </div>
+
+            <!-- Recently Uploaded List -->
+            <div id="recentUploadsContainer" class="hidden space-y-3 pt-4">
+                <h3 class="text-xs font-mono uppercase tracking-wider text-mutedText px-1">Imported in this session</h3>
+                <div id="recentUploadsList" class="space-y-2"></div>
+            </div>
+        </section>
+
+
+        <!-- TAB 2: LIBRARY -->
+        <section id="tab-library" class="hidden space-y-6 transition-all duration-300">
+            <div class="flex items-center justify-between border-b border-white/10 pb-4 pt-2">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight">Your Vault</h2>
+                    <p class="text-xs text-mutedText">Manage imported tracks & set custom live backgrounds</p>
+                </div>
+                <span id="trackCountBadge" class="text-xs font-mono bg-white/10 border border-white/15 px-3 py-1 rounded-full">0 Tracks</span>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyLibraryState" class="liquid-glass-card rounded-3xl p-12 text-center space-y-4 my-8">
+                <div class="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto">
+                    <i data-lucide="music" class="w-7 h-7 text-white/40"></i>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-base font-semibold">Your library is currently empty</p>
+                    <p class="text-xs text-mutedText max-w-sm mx-auto">Switch to the Import tab to load audio files directly from your device.</p>
+                </div>
+                <button onclick="switchTab('search')" class="px-5 py-2.5 rounded-xl bg-white text-black font-semibold text-xs hover:bg-slate-200 transition-all shadow-glow">Import Tracks</button>
+            </div>
+
+            <!-- Library Track List -->
+            <div id="libraryList" class="space-y-2.5"></div>
+        </section>
+
+
+        <!-- TAB 3: NOW PLAYING PLAYER -->
+        <section id="tab-player" class="hidden relative min-h-[65vh] flex flex-col items-center justify-center transition-all duration-300">
+            <!-- Dynamic Canvas Visualizer -->
+            <div class="fixed inset-0 pointer-events-none z-0">
+                <canvas id="synthwaveCanvas" class="w-full h-full object-cover"></canvas>
+                <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-obsidian/30"></div>
+            </div>
+
+            <!-- iOS Liquid Glass Card -->
+            <div class="relative z-10 w-full max-w-sm mx-auto liquid-glass-card rounded-3xl p-6 shadow-liquid-glow flex flex-col items-center text-center space-y-6 my-auto">
+                
+                <!-- Vinyl Disc -->
+                <div class="relative group cursor-pointer" onclick="togglePlayPause()">
+                    <div id="vinylDisc" class="w-44 h-44 sm:w-52 sm:h-52 rounded-full border-2 border-white/30 shadow-silver-disc overflow-hidden transition-all duration-700 animate-spin-vinyl paused-spin">
+                        <img id="playingArt" src="https://placehold.co/400x400/18181b/ffffff?text=Nuvio" class="w-full h-full object-cover">
+                    </div>
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div class="w-8 h-8 rounded-full bg-black/60 border border-white/40 backdrop-blur-md flex items-center justify-center">
+                            <div class="w-2.5 h-2.5 rounded-full bg-white/90"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Track Info -->
+                <div class="space-y-1 w-full px-2">
+                    <h2 id="playingTitle" class="text-lg font-bold text-white truncate tracking-wide">Select a Track</h2>
+                    <p id="playingArtist" class="text-xs text-white/70 truncate font-light">Nuvio Audio Vault</p>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full space-y-2">
+                    <div class="relative w-full h-2 bg-white/15 rounded-full cursor-pointer overflow-hidden border border-white/20 backdrop-blur-sm" id="progressContainer" onclick="seekAudio(event)">
+                        <div id="progressBar" class="absolute top-0 left-0 h-full w-0 bg-gradient-to-r from-white/80 to-white rounded-full transition-all duration-100 shadow-glow"></div>
+                    </div>
+                    <div class="flex justify-between items-center text-[11px] text-white/70 font-mono px-0.5">
+                        <span id="currentTime">0:00</span>
+                        <span id="durationTime">0:00</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FLOATING APPLE-STYLE BOTTOM NAVIGATION DOCK -->
+    <nav class="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+        <div class="glass-dock rounded-full p-2 flex items-center space-x-3 shadow-2xl pointer-events-auto border border-white/20">
+            
+            <!-- LIBRARY BUTTON -->
+            <button id="dockBtn-library" onclick="switchTab('library')" class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all duration-200 active:scale-95 border border-white/10" title="Library">
+                <i data-lucide="library" class="w-5 h-5"></i>
+            </button>
+
+            <!-- PLAYING CAPSULE PILL -->
+            <div onclick="switchTab('player')" class="bg-white/10 hover:bg-white/15 px-4 py-2 rounded-full flex items-center space-x-3 border border-white/10 cursor-pointer transition-all duration-200 active:scale-98 max-w-[220px] sm:max-w-xs">
+                <div class="w-8 h-8 rounded-full bg-white/10 overflow-hidden shrink-0 border border-white/20">
+                    <img id="dockArt" src="https://placehold.co/100x100/18181b/ffffff?text=N" class="w-full h-full object-cover">
+                </div>
+
+                <div class="flex-1 min-w-0 text-left">
+                    <p id="dockTitle" class="text-xs font-semibold text-white truncate">No Song Playing</p>
+                    <p id="dockArtist" class="text-[10px] text-mutedText truncate">Tap to open player</p>
+                </div>
+
+                <div class="flex items-center space-x-1 shrink-0" onclick="event.stopPropagation()">
+                    <button onclick="playPrevTrack()" class="p-1.5 text-white/70 hover:text-white transition-colors">
+                        <i data-lucide="skip-back" class="w-3.5 h-3.5"></i>
+                    </button>
+
+                    <button id="dockPlayBtn" onclick="togglePlayPause()" class="w-7 h-7 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-all shadow-glow">
+                        <i data-lucide="play" class="w-3.5 h-3.5 fill-black ml-0.5"></i>
+                    </button>
+
+                    <button onclick="playNextTrack()" class="p-1.5 text-white/70 hover:text-white transition-colors">
+                        <i data-lucide="skip-forward" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- IMPORT BUTTON -->
+            <button id="dockBtn-search" onclick="switchTab('search')" class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all duration-200 active:scale-95 border border-white/10" title="Import Music">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+            </button>
+
+        </div>
+    </nav>
+
+    <!-- HIDDEN COVER FILE INPUT -->
+    <input type="file" id="coverFileInput" accept="image/*" class="hidden" onchange="handleCoverImageUpload(event)">
+
+    <!-- LOGIC & CANVAS ENGINES -->
+    <script>
+        // --- STATE MANAGEMENT ---
+        let currentTab = 'search';
+        let currentTrack = null;
+        let isPlaying = false;
+        let activeObjectUrl = null;
+        let selectedTrackForCoverEdit = null;
+        let lastFrameTime = performance.now();
+
+        const audio = new Audio();
+        const offlineTracksMap = new Map();
+
+        // --- CANVAS ENGINE ---
+        let canvas, ctx;
+        let speed = 0;
+        let targetSpeed = 0;
+        let gridOffset = 0;
+        let buildings = [];
+        let stardustParticles = [];
+        let timeOffset = 0;
+
+        function initSynthwaveCanvas() {
+            canvas = document.getElementById('synthwaveCanvas');
+            if (!canvas) return;
+            ctx = canvas.getContext('2d');
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                generateBuildings();
+                generateStardust();
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+            requestAnimationFrame(drawSynthwave);
+        }
+
+        function generateBuildings() {
+            buildings = [];
+            const buildingCount = 32;
+            const w = canvas ? canvas.width : 800;
+            const step = w / buildingCount;
+
+            for (let i = 0; i < buildingCount + 4; i++) {
+                buildings.push({
+                    x: i * step,
+                    width: step * (0.75 + Math.random() * 0.45),
+                    height: 100 + Math.random() * 210,
+                    windows: Array.from({ length: 16 }, () => Math.random() > 0.35),
+                    neonColor: Math.random() > 0.5 ? '#ff0077' : '#00f0ff'
+                });
+            }
+        }
+
+        function generateStardust() {
+            stardustParticles = [];
+            const count = 75;
+            const w = canvas ? canvas.width : 800;
+            const h = canvas ? canvas.height : 600;
+
+            for (let i = 0; i < count; i++) {
+                stardustParticles.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    size: 1 + Math.random() * 2.5,
+                    speedY: 0.2 + Math.random() * 0.6,
+                    alpha: Math.random(),
+                    pulseSpeed: 0.02 + Math.random() * 0.04
+                });
+            }
+        }
+
+        function drawSynthwave(now) {
+            if (!canvas || !ctx) return;
+            const delta = Math.min((now - lastFrameTime) / 1000, 0.1) || 0.016;
+            lastFrameTime = now;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const currentStyle = (currentTrack && currentTrack.bgStyle) ? currentTrack.bgStyle : 'City';
+
+            targetSpeed = isPlaying ? 4.0 : 0.8;
+            speed += (targetSpeed - speed) * (delta * 4.0);
+            gridOffset = (gridOffset + speed * delta * 60) % 40;
+            timeOffset += delta * (isPlaying ? 1.2 : 0.3);
+
+            ctx.clearRect(0, 0, width, height);
+
+            if (currentStyle === 'Ocean') {
+                drawOceanScene(width, height);
+            } else if (currentStyle === 'Pattern') {
+                drawPatternScene(width, height);
+            } else if (currentStyle === 'Aurora') {
+                drawAuroraScene(width, height);
+            } else if (currentStyle === 'Stardust') {
+                drawStardustScene(width, height);
+            } else {
+                drawCityScene(width, height, delta);
+            }
+
+            requestAnimationFrame(drawSynthwave);
+        }
+
+        function drawCityScene(width, height, delta) {
+            const horizon = height * 0.55;
+
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, horizon);
+            skyGradient.addColorStop(0, '#06020e');
+            skyGradient.addColorStop(0.4, '#1b0732');
+            skyGradient.addColorStop(0.8, '#4a084c');
+            skyGradient.addColorStop(1, '#ff2a8d');
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, width, horizon);
+
+            const sunY = horizon - 25;
+            const sunRadius = Math.min(width, height) * 0.19;
+            const sunGradient = ctx.createLinearGradient(0, sunY - sunRadius, 0, sunY + sunRadius);
+            sunGradient.addColorStop(0, '#ffffaa');
+            sunGradient.addColorStop(0.3, '#ff0077');
+            sunGradient.addColorStop(0.8, '#880055');
+            sunGradient.addColorStop(1, '#2b0038');
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(width / 2, sunY, sunRadius, 0, Math.PI * 2);
+            ctx.fillStyle = sunGradient;
+            ctx.shadowColor = '#ff0077';
+            ctx.shadowBlur = 45;
+            ctx.fill();
+
+            for (let i = 0; i < 8; i++) {
+                const cutY = sunY + (i * 11) - 12;
+                if (cutY > sunY - sunRadius && cutY < sunY + sunRadius) {
+                    ctx.fillStyle = '#06020e';
+                    ctx.fillRect(width / 2 - sunRadius - 15, cutY, sunRadius * 2 + 30, 2 + i * 0.9);
+                }
+            }
+            ctx.restore();
+
+            ctx.save();
+            const bSpeed = speed * delta * 50;
+
+            buildings.forEach(b => {
+                if (isPlaying) b.x -= bSpeed;
+                if (b.x + b.width < -20) {
+                    b.x = width + Math.random() * 30;
+                    b.height = 100 + Math.random() * 210;
+                }
+
+                const bY = horizon - b.height;
+                ctx.fillStyle = '#0d041c';
+                ctx.fillRect(b.x, bY, b.width, b.height);
+
+                ctx.fillStyle = b.neonColor;
+                ctx.shadowColor = b.neonColor;
+                ctx.shadowBlur = 10;
+                ctx.fillRect(b.x, bY, b.width, 3);
+
+                ctx.shadowBlur = 4;
+                b.windows.forEach((win, idx) => {
+                    if (win) {
+                        const wx = b.x + 5 + (idx % 3) * 7;
+                        const wy = bY + 12 + Math.floor(idx / 3) * 14;
+                        if (wx < b.x + b.width - 7 && wy < horizon - 8) {
+                            ctx.fillStyle = (idx % 2 === 0) ? 'rgba(0, 240, 255, 0.85)' : 'rgba(255, 0, 136, 0.85)';
+                            ctx.fillRect(wx, wy, 4, 6);
+                        }
+                    }
+                });
+            });
+            ctx.restore();
+
+            const groundGradient = ctx.createLinearGradient(0, horizon, 0, height);
+            groundGradient.addColorStop(0, '#0c0218');
+            groundGradient.addColorStop(1, '#030008');
+            ctx.fillStyle = groundGradient;
+            ctx.fillRect(0, horizon, width, height - horizon);
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 0, 136, 0.65)';
+            ctx.lineWidth = 1.5;
+            ctx.shadowColor = '#ff0088';
+            ctx.shadowBlur = 12;
+
+            const vanishingX = width / 2;
+            const lineCount = 26;
+
+            for (let i = -lineCount; i <= lineCount; i++) {
+                const startX = vanishingX + (i * 10);
+                const endX = vanishingX + (i * (width / 5));
+                ctx.beginPath();
+                ctx.moveTo(startX, horizon);
+                ctx.lineTo(endX, height);
+                ctx.stroke();
+            }
+
+            const horizonLines = 18;
+            for (let i = 0; i < horizonLines; i++) {
+                const lineY = horizon + Math.pow(i / horizonLines, 2.6) * (height - horizon) + gridOffset;
+                if (lineY >= horizon && lineY <= height) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, lineY);
+                    ctx.lineTo(width, lineY);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+        }
+
+        function drawOceanScene(width, height) {
+            ctx.fillStyle = '#020b14';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.save();
+            const waves = 6;
+            for (let i = 0; i < waves; i++) {
+                ctx.beginPath();
+                const yOffset = height * 0.4 + (i * 45);
+                ctx.moveTo(0, height);
+
+                for (let x = 0; x <= width; x += 20) {
+                    const waveY = Math.sin((x * 0.008) + timeOffset + i) * (15 + i * 5);
+                    ctx.lineTo(x, yOffset + waveY);
+                }
+
+                ctx.lineTo(width, height);
+                ctx.closePath();
+
+                const opacity = 0.15 + (i * 0.12);
+                ctx.fillStyle = `rgba(0, 180, 216, ${opacity})`;
+                ctx.shadowColor = '#00f0ff';
+                ctx.shadowBlur = 12;
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function drawPatternScene(width, height) {
+            ctx.fillStyle = '#0a0a10';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.save();
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const maxRadius = Math.max(width, height) * 0.6;
+            const ringCount = 14;
+
+            for (let i = 1; i <= ringCount; i++) {
+                const baseRadius = (maxRadius / ringCount) * i;
+                const pulse = Math.sin(timeOffset * 2 - i * 0.4) * 8;
+                const radius = Math.max(5, baseRadius + pulse);
+
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `hsla(${(i * 20 + timeOffset * 40) % 360}, 80%, 60%, ${0.2 + (i / ringCount) * 0.5})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawAuroraScene(width, height) {
+            ctx.fillStyle = '#030712';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.save();
+            const ribbons = 4;
+            for (let r = 0; r < ribbons; r++) {
+                ctx.beginPath();
+                const startY = height * 0.2 + r * 60;
+                ctx.moveTo(0, startY);
+
+                for (let x = 0; x <= width; x += 30) {
+                    const waveY = startY + Math.sin(x * 0.004 + timeOffset + r) * 70 + Math.cos(x * 0.002 - timeOffset) * 40;
+                    ctx.lineTo(x, waveY);
+                }
+
+                ctx.lineTo(width, height);
+                ctx.lineTo(0, height);
+                ctx.closePath();
+
+                const grad = ctx.createLinearGradient(0, startY - 50, 0, height);
+                grad.addColorStop(0, `hsla(${(160 + r * 45 + timeOffset * 15) % 360}, 85%, 55%, 0.35)`);
+                grad.addColorStop(0.6, `hsla(${(200 + r * 30) % 360}, 80%, 40%, 0.1)`);
+                grad.addColorStop(1, 'transparent');
+
+                ctx.fillStyle = grad;
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function drawStardustScene(width, height) {
+            ctx.fillStyle = '#040408';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.save();
+            const pSpeedMult = isPlaying ? 2.5 : 0.8;
+
+            stardustParticles.forEach(p => {
+                p.y -= p.speedY * pSpeedMult;
+                if (p.y < 0) {
+                    p.y = height;
+                    p.x = Math.random() * width;
+                }
+
+                p.alpha += Math.sin(timeOffset * p.pulseSpeed * 10) * 0.02;
+                const clampedAlpha = Math.max(0.1, Math.min(0.9, p.alpha));
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(226, 232, 240, ${clampedAlpha})`;
+                ctx.shadowColor = '#ffffff';
+                ctx.shadowBlur = p.size * 3;
+                ctx.fill();
+            });
+            ctx.restore();
+        }
+
+        // --- TAB SWITCHING ---
+        function switchTab(tabId) {
+            currentTab = tabId;
+            ['search', 'library', 'player'].forEach(id => {
+                const el = document.getElementById(`tab-${id}`);
+                if (el) {
+                    if (id === tabId) el.classList.remove('hidden');
+                    else el.classList.add('hidden');
+                }
+
+                const dockBtn = document.getElementById(`dockBtn-${id}`);
+                if (dockBtn) {
+                    if (id === tabId) {
+                        dockBtn.classList.add('bg-white/30', 'text-white', 'border-white/40');
+                        dockBtn.classList.remove('bg-white/10', 'text-white/70');
+                    } else {
+                        dockBtn.classList.remove('bg-white/30', 'text-white', 'border-white/40');
+                        dockBtn.classList.add('bg-white/10', 'text-white/70');
+                    }
+                }
+            });
+
+            if (tabId === 'library') renderLibrary();
+        }
+
+        // --- AUDIO FILE UPLOAD & MANAGEMENT ---
+        function handleAudioUpload(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            const validFiles = [];
+
+            Array.from(files).forEach(file => {
+                // iPhone MP3 Import Fix 2: Dual validation check for MIME type and file extension fallback
+                const isAudio = 
+                    (file.type && file.type.startsWith('audio/')) ||
+                    /\.(mp3|m4a|aac|wav|ogg|oga|flac|aif|aiff|opus)$/i.test(file.name);
+
+                if (!isAudio) return;
+
+                validFiles.push(file);
+
+                const trackId = 'track_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                const track = {
+                    id: trackId,
+                    title: file.name.replace(/\.[^/.]+$/, ""),
+                    artist: 'Local Import',
+                    file: file,
+                    coverArt: 'https://placehold.co/400x400/18181b/ffffff?text=' + encodeURIComponent(file.name.substring(0, 2).toUpperCase()),
+                    bgStyle: 'City'
+                };
+
+                offlineTracksMap.set(trackId, track);
+            });
+
+            if (validFiles.length > 0) {
+                updateTrackBadge();
+                renderRecentUploads(validFiles);
+            }
+            
+            event.target.value = '';
+        }
+
+        function updateTrackBadge() {
+            const badge = document.getElementById('trackCountBadge');
+            if (badge) badge.innerText = `${offlineTracksMap.size} Tracks`;
+        }
+
+        function renderRecentUploads(files) {
+            const container = document.getElementById('recentUploadsContainer');
+            const list = document.getElementById('recentUploadsList');
+            if (!container || !list) return;
+
+            container.classList.remove('hidden');
+            list.innerHTML = '';
+
+            Array.from(files).forEach(file => {
+                const item = document.createElement('div');
+                item.className = 'glass-panel p-3 rounded-2xl flex items-center justify-between text-xs border border-white/10';
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3 truncate">
+                        <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                            <i data-lucide="music" class="w-4 h-4 text-white"></i>
+                        </div>
+                        <span class="truncate font-medium text-white">${file.name}</span>
+                    </div>
+                    <span class="text-[10px] text-emerald-400 font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">Ready</span>
+                `;
+                list.appendChild(item);
+            });
+
+            lucide.createIcons();
+        }
+
+        function renderLibrary() {
+            const libraryList = document.getElementById('libraryList');
+            const emptyState = document.getElementById('emptyLibraryState');
+            if (!libraryList || !emptyState) return;
+
+            if (offlineTracksMap.size === 0) {
+                emptyState.classList.remove('hidden');
+                libraryList.innerHTML = '';
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            libraryList.innerHTML = '';
+
+            offlineTracksMap.forEach(track => {
+                const isCurrentPlaying = currentTrack && currentTrack.id === track.id;
+                const item = document.createElement('div');
+                
+                item.className = `glass-panel p-3 sm:p-4 rounded-2xl flex items-center justify-between space-x-4 border transition-all cursor-pointer group ${
+                    isCurrentPlaying ? 'active-track-glow' : 'border-white/10 hover:border-white/25'
+                }`;
+                item.onclick = () => playTrack(track.id);
+
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3.5 min-w-0">
+                        <div class="relative w-12 h-12 rounded-xl overflow-hidden bg-white/10 shrink-0 border border-white/15 group-hover:scale-105 transition-transform">
+                            <img src="${track.coverArt}" class="w-full h-full object-cover">
+                            ${isCurrentPlaying ? `
+                                <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+                                    <i data-lucide="disc-3" class="w-6 h-6 text-pink-400 animate-spin-vinyl"></i>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="min-w-0 text-left">
+                            <div class="flex items-center space-x-2">
+                                <h4 class="text-sm font-semibold ${isCurrentPlaying ? 'text-pink-300 font-bold' : 'text-white'} truncate">${track.title}</h4>
+                                ${isCurrentPlaying ? `<span class="text-[9px] font-mono uppercase bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded-full border border-pink-500/40">Now Playing</span>` : ''}
+                            </div>
+                            <p class="text-xs text-mutedText truncate">${track.artist}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2 shrink-0">
+                        <button onclick="editTrackCover('${track.id}', event)" class="p-2 text-white/50 hover:text-white transition-colors" title="Change Artwork">
+                            <i data-lucide="image" class="w-4 h-4"></i>
+                        </button>
+
+                        <select onchange="updateTrackBgStyle('${track.id}', this.value, event)" onclick="event.stopPropagation()" class="bg-custom-select text-[11px] font-medium px-2 py-1.5 rounded-lg border border-white/15 outline-none cursor-pointer">
+                            <option value="City" ${track.bgStyle === 'City' ? 'selected' : ''}>City</option>
+                            <option value="Ocean" ${track.bgStyle === 'Ocean' ? 'selected' : ''}>Ocean</option>
+                            <option value="Pattern" ${track.bgStyle === 'Pattern' ? 'selected' : ''}>Pattern</option>
+                            <option value="Aurora" ${track.bgStyle === 'Aurora' ? 'selected' : ''}>Aurora</option>
+                            <option value="Stardust" ${track.bgStyle === 'Stardust' ? 'selected' : ''}>Stardust</option>
+                        </select>
+
+                        <button onclick="removeTrack('${track.id}', event)" class="p-2 text-red-400/60 hover:text-red-400 transition-colors" title="Delete Track">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                `;
+                libraryList.appendChild(item);
+            });
+
+            lucide.createIcons();
+        }
+
+        // --- PLAYBACK CONTROLS ---
+        function playTrack(trackId) {
+            const track = offlineTracksMap.get(trackId);
+            if (!track) return;
+
+            currentTrack = track;
+
+            if (activeObjectUrl) {
+                URL.revokeObjectURL(activeObjectUrl);
+            }
+
+            activeObjectUrl = URL.createObjectURL(track.file);
+            audio.src = activeObjectUrl;
+            audio.play().then(() => {
+                isPlaying = true;
+                updatePlaybackUI();
+            }).catch(err => console.log('Playback blocked:', err));
+
+            renderLibrary();
+        }
+
+        function togglePlayPause() {
+            if (!currentTrack) {
+                const firstTrack = offlineTracksMap.keys().next().value;
+                if (firstTrack) playTrack(firstTrack);
+                return;
+            }
+
+            if (isPlaying) {
+                audio.pause();
+                isPlaying = false;
+            } else {
+                audio.play();
+                isPlaying = true;
+            }
+
+            updatePlaybackUI();
+            renderLibrary();
+        }
+
+        function playNextTrack() {
+            const keys = Array.from(offlineTracksMap.keys());
+            if (keys.length === 0) return;
+            const currentIndex = keys.indexOf(currentTrack ? currentTrack.id : '');
+            const nextIndex = (currentIndex + 1) % keys.length;
+            playTrack(keys[nextIndex]);
+        }
+
+        function playPrevTrack() {
+            const keys = Array.from(offlineTracksMap.keys());
+            if (keys.length === 0) return;
+            const currentIndex = keys.indexOf(currentTrack ? currentTrack.id : '');
+            const prevIndex = (currentIndex - 1 + keys.length) % keys.length;
+            playTrack(keys[prevIndex]);
+        }
+
+        function updatePlaybackUI() {
+            const playingTitle = document.getElementById('playingTitle');
+            const playingArtist = document.getElementById('playingArtist');
+            const playingArt = document.getElementById('playingArt');
+            const vinylDisc = document.getElementById('vinylDisc');
+
+            const dockTitle = document.getElementById('dockTitle');
+            const dockArtist = document.getElementById('dockArtist');
+            const dockArt = document.getElementById('dockArt');
+            const dockPlayBtn = document.getElementById('dockPlayBtn');
+
+            if (currentTrack) {
+                if (playingTitle) playingTitle.innerText = currentTrack.title;
+                if (playingArtist) playingArtist.innerText = currentTrack.artist;
+                if (playingArt) playingArt.src = currentTrack.coverArt;
+
+                if (dockTitle) dockTitle.innerText = currentTrack.title;
+                if (dockArtist) dockArtist.innerText = currentTrack.artist;
+                if (dockArt) dockArt.src = currentTrack.coverArt;
+            }
+
+            if (vinylDisc) {
+                if (isPlaying) vinylDisc.classList.remove('paused-spin');
+                else vinylDisc.classList.add('paused-spin');
+            }
+
+            if (dockPlayBtn) {
+                dockPlayBtn.innerHTML = isPlaying 
+                    ? `<i data-lucide="pause" class="w-3.5 h-3.5 fill-black"></i>`
+                    : `<i data-lucide="play" class="w-3.5 h-3.5 fill-black ml-0.5"></i>`;
+                lucide.createIcons();
+            }
+        }
+
+        function seekAudio(event) {
+            if (!audio.duration) return;
+            const container = document.getElementById('progressContainer');
+            const rect = container.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const percentage = clickX / rect.width;
+            audio.currentTime = percentage * audio.duration;
+        }
+
+        audio.ontimeupdate = () => {
+            const progressBar = document.getElementById('progressBar');
+            const currentTimeEl = document.getElementById('currentTime');
+            const durationTimeEl = document.getElementById('durationTime');
+
+            if (audio.duration) {
+                const pct = (audio.currentTime / audio.duration) * 100;
+                if (progressBar) progressBar.style.width = `${pct}%`;
+
+                if (currentTimeEl) currentTimeEl.innerText = formatTime(audio.currentTime);
+                if (durationTimeEl) durationTimeEl.innerText = formatTime(audio.duration);
+            }
+        };
+
+        audio.onended = () => {
+            playNextTrack();
+        };
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // --- ARTWORK EDITING & REMOVAL ---
+        function editTrackCover(trackId, event) {
+            event.stopPropagation();
+            selectedTrackForCoverEdit = trackId;
+            document.getElementById('coverFileInput').click();
+        }
+
+        function handleCoverImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file || !selectedTrackForCoverEdit) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const track = offlineTracksMap.get(selectedTrackForCoverEdit);
+                if (track) {
+                    track.coverArt = e.target.result;
+                    if (currentTrack && currentTrack.id === track.id) {
+                        updatePlaybackUI();
+                    }
+                    renderLibrary();
+                }
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function updateTrackBgStyle(trackId, styleValue, event) {
+            event.stopPropagation();
+            const track = offlineTracksMap.get(trackId);
+            if (track) {
+                track.bgStyle = styleValue;
+            }
+        }
+
+        function removeTrack(trackId, event) {
+            event.stopPropagation();
+            if (currentTrack && currentTrack.id === trackId) {
+                audio.pause();
+                isPlaying = false;
+                currentTrack = null;
+                updatePlaybackUI();
+            }
+            offlineTracksMap.delete(trackId);
+            updateTrackBadge();
+            renderLibrary();
+        }
+
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initSynthwaveCanvas();
+            switchTab('search');
+        });
+    </script>
+</body>
+</html>
